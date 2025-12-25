@@ -78,10 +78,6 @@
         
         footer { text-align: center; margin-top: 40px; padding: 20px; color: var(--text-secondary); font-size: 0.9rem; }
         
-        .user-indicator { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 20px; }
-        .btn-switch { background: transparent; border: 2px solid #9c27b0; color: #9c27b0; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: 600; }
-        .btn-switch:hover { background: rgba(156, 39, 176, 0.1); }
-        
         .status { padding: 10px 15px; border-radius: 5px; margin: 10px 0; text-align: center; font-weight: 500; border-left: 4px solid; }
         .connected { background: rgba(76, 175, 80, 0.1); color: #2e7d32; border-left-color: #4CAF50; }
         .disconnected { background: rgba(244, 67, 54, 0.1); color: #c62828; border-left-color: #F44336; }
@@ -94,6 +90,10 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         
         #loadingText { color: var(--text-secondary); margin-top: 10px; }
+        
+        .reset-button-container { text-align: center; margin-top: 20px; }
+        .reset-btn { background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+        .reset-btn:hover { background: #f57c00; transform: translateY(-2px); }
     </style>
 </head>
 <body>
@@ -110,13 +110,10 @@
         <header>
             <h1><i class="fas fa-heart"></i> Ronji & Mamamia's Likes & Hates</h1>
             <p class="subtitle">Random Project to track what we love and hate, Wala lang bored ako e HAHAHAHA</p>
-            <div class="user-indicator">
-                <div class="user-badge" id="userBadge">
-                    <i class="fas fa-user"></i> 
-                    <span id="currentUser">Ronji</span>
-                </div>
-                <button class="btn-switch" onclick="switchUser()">
-                    <i class="fas fa-sync-alt"></i> Switch to <span id="switchToUser">Mamamia</span>
+            
+            <div class="reset-button-container">
+                <button class="reset-btn" onclick="resetRonjiData()">
+                    <i class="fas fa-redo"></i> Reset Ronji's Data
                 </button>
             </div>
         </header>
@@ -432,18 +429,25 @@
             hatesList.innerHTML = '';
             
             console.log(`👤 Updating ${person} panel:`, data);
+            console.log(`📊 ${person} data structure:`, data);
+            console.log(`❤️ ${person} likes array:`, data.likes);
+            console.log(`💔 ${person} hates array:`, data.hates);
+            
+            // Ensure we have arrays
+            const likes = Array.isArray(data.likes) ? data.likes : [];
+            const hates = Array.isArray(data.hates) ? data.hates : [];
             
             // Check if data has likes
-            if (!data.likes || data.likes.length === 0) {
+            if (likes.length === 0) {
                 console.log(`📭 No likes found for ${person}`);
                 const emptyMsg = document.createElement('div');
                 emptyMsg.style.cssText = 'color: var(--text-secondary); font-style: italic; padding: 10px;';
                 emptyMsg.textContent = 'No likes added yet';
                 likesList.appendChild(emptyMsg);
             } else {
-                console.log(`❤️ Found ${data.likes.length} likes for ${person}:`, data.likes);
+                console.log(`❤️ Found ${likes.length} likes for ${person}:`, likes);
                 // Add likes
-                data.likes.forEach((item, index) => {
+                likes.forEach((item, index) => {
                     const itemEl = document.createElement('div');
                     itemEl.className = 'item';
                     itemEl.innerHTML = `
@@ -457,16 +461,16 @@
             }
             
             // Check if data has hates
-            if (!data.hates || data.hates.length === 0) {
+            if (hates.length === 0) {
                 console.log(`📭 No hates found for ${person}`);
                 const emptyMsg = document.createElement('div');
                 emptyMsg.style.cssText = 'color: var(--text-secondary); font-style: italic; padding: 10px;';
                 emptyMsg.textContent = 'No hates added yet';
                 hatesList.appendChild(emptyMsg);
             } else {
-                console.log(`💔 Found ${data.hates.length} hates for ${person}:`, data.hates);
+                console.log(`💔 Found ${hates.length} hates for ${person}:`, hates);
                 // Add hates
-                data.hates.forEach((item, index) => {
+                hates.forEach((item, index) => {
                     const itemEl = document.createElement('div');
                     itemEl.className = 'item';
                     itemEl.innerHTML = `
@@ -542,7 +546,12 @@
                     
                     // Create update object
                     const updateData = {};
-                    const currentItems = data[personKey] ? data[personKey][type] || [] : [];
+                    
+                    // Get current items or initialize empty array
+                    let currentItems = [];
+                    if (data[personKey] && data[personKey][type] && Array.isArray(data[personKey][type])) {
+                        currentItems = data[personKey][type];
+                    }
                     
                     // Add new item to array
                     updateData[`${personKey}.${type}`] = [...currentItems, text];
@@ -704,8 +713,13 @@
             const ronjiData = data.ronji || data.me || { likes: [], hates: [] };
             const mamamiaData = data.mamamia || data.her || { likes: [], hates: [] };
             
-            const ronjiTotal = (ronjiData.likes ? ronjiData.likes.length : 0) + (ronjiData.hates ? ronjiData.hates.length : 0);
-            const mamamiaTotal = (mamamiaData.likes ? mamamiaData.likes.length : 0) + (mamamiaData.hates ? mamamiaData.hates.length : 0);
+            const ronjiLikes = Array.isArray(ronjiData.likes) ? ronjiData.likes : [];
+            const ronjiHates = Array.isArray(ronjiData.hates) ? ronjiData.hates : [];
+            const mamamiaLikes = Array.isArray(mamamiaData.likes) ? mamamiaData.likes : [];
+            const mamamiaHates = Array.isArray(mamamiaData.hates) ? mamamiaData.hates : [];
+            
+            const ronjiTotal = ronjiLikes.length + ronjiHates.length;
+            const mamamiaTotal = mamamiaLikes.length + mamamiaHates.length;
             
             document.getElementById('ronji-total-count').textContent = ronjiTotal;
             document.getElementById('mamamia-total-count').textContent = mamamiaTotal;
@@ -713,18 +727,32 @@
             console.log('📊 Stats updated:', { ronjiTotal, mamamiaTotal });
         }
 
-        function switchUser() {
-            const currentUser = document.getElementById('currentUser');
-            const switchTo = document.getElementById('switchToUser');
+        async function resetRonjiData() {
+            if (!confirm('Reset Ronji\'s data to default? This will remove all his current items.')) return;
             
-            if (currentUser.textContent === 'Ronji') {
-                currentUser.textContent = 'Mamamia';
-                switchTo.textContent = 'Ronji';
-                showSyncNotification('Now editing as Mamamia');
-            } else {
-                currentUser.textContent = 'Ronji';
-                switchTo.textContent = 'Mamamia';
-                showSyncNotification('Now editing as Ronji');
+            try {
+                const docRef = db.collection('preferences').doc('coupleData');
+                
+                // Get current data first
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    
+                    // Determine Ronji key
+                    const ronjiKey = data.ronji ? 'ronji' : 'me';
+                    
+                    // Reset Ronji's data
+                    await docRef.update({
+                        [`${ronjiKey}.likes`]: ["Watching movies together", "Mamamia's smile in the morning"],
+                        [`${ronjiKey}.hates`]: ["Being away from Mamamia", "When she's upset"],
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    showSyncNotification('Ronji\'s data reset!');
+                }
+            } catch (error) {
+                console.error('❌ Error resetting data:', error);
+                alert('Error resetting data: ' + error.message);
             }
         }
 
@@ -774,13 +802,35 @@
         }
 
         // Debug function to check Firebase data
-        async function checkFirebaseData() {
+        async function debugFirebaseData() {
             try {
                 const doc = await db.collection('preferences').doc('coupleData').get();
                 if (doc.exists) {
-                    console.log('🔍 CURRENT FIREBASE DATA STRUCTURE:', doc.data());
+                    const data = doc.data();
+                    console.log('🔍 ===== FIREBASE DATA DEBUG =====');
+                    console.log('All keys:', Object.keys(data));
+                    
+                    // Check Ronji structure
+                    if (data.ronji) {
+                        console.log('📦 Ronji object:', data.ronji);
+                        console.log('Type of ronji:', typeof data.ronji);
+                        console.log('Ronji keys:', Object.keys(data.ronji));
+                        console.log('Ronji.likes:', data.ronji.likes);
+                        console.log('Is ronji.likes array?', Array.isArray(data.ronji.likes));
+                    }
+                    
+                    // Check her (Mamamia) structure
+                    if (data.her) {
+                        console.log('📦 her (Mamamia) object:', data.her);
+                        console.log('Type of her:', typeof data.her);
+                        console.log('her keys:', Object.keys(data.her));
+                        console.log('her.likes:', data.her.likes);
+                        console.log('Is her.likes array?', Array.isArray(data.her.likes));
+                    }
+                    
+                    console.log('🔍 ===== END DEBUG =====');
                 } else {
-                    console.log('📭 No data found');
+                    console.log('📭 No document found');
                 }
             } catch (error) {
                 console.error('❌ Error checking data:', error);
