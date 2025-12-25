@@ -6,6 +6,10 @@
     <title>Our Likes & Hates</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/styles.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
 </head>
 <body>
     <div class="container">
@@ -15,16 +19,37 @@
                 <span class="theme-icon" id="themeIcon">🌙</span>
                 <span id="themeText">Dark Mode</span>
             </button>
+            <div class="connection-status" id="connectionStatus">
+                <i class="fas fa-wifi"></i> <span>Connected</span>
+            </div>
         </div>
         
         <header>
             <h1><i class="fas fa-heart"></i> Our Likes & Hates</h1>
             <p class="subtitle">Random Project to track what we love and hate, Wala lang bored ako e HAHAHAHA</p>
+            <div class="user-indicator">
+                <div class="user-badge" id="userBadge">
+                    <i class="fas fa-user"></i> 
+                    <span id="currentUser">Loading...</span>
+                </div>
+                <button class="btn-switch" onclick="switchUser()">
+                    <i class="fas fa-sync-alt"></i> Switch to <span id="switchToUser">Her</span>
+                </button>
+            </div>
         </header>
+        
+        <!-- Loading Screen -->
+        <div class="loading-screen" id="loadingScreen">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p>Loading your data...</p>
+                <p class="loading-sub">Real-time updates enabled</p>
+            </div>
+        </div>
         
         <div class="couple-container">
             <!-- My Panel -->
-            <div class="person-panel">
+            <div class="person-panel" id="myPanel">
                 <div class="person-header me">
                     <div class="avatar-container">
                         <div class="avatar" id="my-avatar">
@@ -33,14 +58,21 @@
                             </div>
                             <img class="avatar-img" id="my-avatar-img" style="display: none;" alt="My photo">
                         </div>
-                        <button class="upload-btn" onclick="document.getElementById('my-avatar-input').click()">
+                        <button class="upload-btn" onclick="uploadAvatar('me')">
                             <i class="fas fa-camera"></i>
                         </button>
-                        <input type="file" id="my-avatar-input" accept="image/*" style="display: none;" onchange="uploadMyAvatar(event)">
+                        <input type="file" id="my-avatar-input" accept="image/*" style="display: none;">
                     </div>
                     <div class="person-info">
                         <h2>Me</h2>
                         <p>Ang Masamang Tao</p>
+                        <div class="edit-toggle">
+                            <label class="switch">
+                                <input type="checkbox" id="editMyMode" onchange="toggleEditMode('me', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                            <span>Edit Mode</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -70,7 +102,7 @@
             </div>
             
             <!-- Her Panel -->
-            <div class="person-panel">
+            <div class="person-panel" id="herPanel">
                 <div class="person-header her">
                     <div class="avatar-container">
                         <div class="avatar" id="her-avatar">
@@ -79,14 +111,21 @@
                             </div>
                             <img class="avatar-img" id="her-avatar-img" style="display: none;" alt="Her photo">
                         </div>
-                        <button class="upload-btn" onclick="document.getElementById('her-avatar-input').click()">
+                        <button class="upload-btn" onclick="uploadAvatar('her')">
                             <i class="fas fa-camera"></i>
                         </button>
-                        <input type="file" id="her-avatar-input" accept="image/*" style="display: none;" onchange="uploadHerAvatar(event)">
+                        <input type="file" id="her-avatar-input" accept="image/*" style="display: none;">
                     </div>
                     <div class="person-info">
                         <h2>Her</h2>
                         <p>Miaganda</p>
+                        <div class="edit-toggle">
+                            <label class="switch">
+                                <input type="checkbox" id="editHerMode" onchange="toggleEditMode('her', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                            <span>Edit Mode</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -118,7 +157,7 @@
         
         <!-- Statistics Section -->
         <div class="stats-section">
-            <h2 class="stats-title">Our Relationship Stats</h2>
+            <h2 class="stats-title">Our Relationship Stats <span class="real-time-badge"><i class="fas fa-bolt"></i> Live</span></h2>
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">My Total Items</div>
@@ -140,15 +179,77 @@
                     <div class="stat-value" id="opposite-count">0</div>
                 </div>
             </div>
+            <div class="last-update">
+                <i class="fas fa-clock"></i> Last updated: <span id="lastUpdateTime">Just now</span>
+            </div>
         </div>
-                
+        
+        <!-- Instructions -->
+        <div class="database-info">
+            <h2><i class="fas fa-sync-alt"></i> How Real-time Sync Works</h2>
+            <p>Your changes automatically sync to all devices! Here's how to share with your girlfriend:</p>
+            
+            <div class="vercel-steps">
+                <h3>Sharing Instructions:</h3>
+                <ol>
+                    <li><strong>Share the website URL</strong> with Miaganda</li>
+                    <li><strong>She visits the same URL</strong> on her device</li>
+                    <li><strong>Click "Switch to Her"</strong> to edit her preferences</li>
+                    <li><strong>All changes sync instantly</strong> between both devices</li>
+                    <li><strong>No login required</strong> - it just works!</li>
+                </ol>
+            </div>
+            
+            <div class="api-test">
+                <h3>Current Session:</h3>
+                <div class="export-import">
+                    <button class="btn-primary" onclick="exportData()">
+                        <i class="fas fa-download"></i> Backup Data
+                    </button>
+                    <button class="btn-primary" onclick="showAdminPanel()">
+                        <i class="fas fa-cog"></i> Admin Settings
+                    </button>
+                </div>
+                <p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-secondary);">
+                    <i class="fas fa-info-circle"></i> Data is stored in Firebase and updates in real-time.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Admin Panel (Hidden) -->
+        <div class="admin-panel" id="adminPanel" style="display: none;">
+            <h3><i class="fas fa-cog"></i> Admin Settings</h3>
+            <div class="admin-options">
+                <button class="btn-primary" onclick="resetAllData()">
+                    <i class="fas fa-redo"></i> Reset All Data
+                </button>
+                <button class="btn-primary" onclick="loadSampleData()">
+                    <i class="fas fa-magic"></i> Load Sample Data
+                </button>
+                <button class="btn-primary" onclick="clearLocalData()">
+                    <i class="fas fa-trash"></i> Clear Local Cache
+                </button>
+            </div>
+        </div>
+        
         <footer>
-            <p>Made with <i class="fas fa-heart" style="color:#ff6b8b;"></i> for the most amazing girl | Hosted on Vercel</p>
+            <p>Made with <i class="fas fa-heart" style="color:#ff6b8b;"></i> for the most amazing girl | Real-time sync powered by Firebase</p>
         </footer>
     </div>
 
+    <!-- Firebase configuration - YOU MUST UPDATE THIS! -->
+    <script>
+        // ⚠️ REPLACE WITH YOUR FIREBASE CONFIG ⚠️
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY_HERE",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+    </script>
+    
     <script src="/script.js"></script>
 </body>
-
 </html>
-
