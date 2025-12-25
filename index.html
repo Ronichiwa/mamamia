@@ -256,7 +256,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <script>
+       <script>
         // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyCt-7dABHqoIkigD5M3iG4seJtyj-z8Ehs",
@@ -284,6 +284,10 @@
                 // Initialize Firebase
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
+                
+                // Show connected status
+                document.getElementById('status').textContent = '✅ Connected to Firebase! Real-time sync active';
+                document.getElementById('status').className = 'status connected';
                 
                 // Set up real-time listener FIRST
                 setupRealtimeListener();
@@ -324,18 +328,34 @@
                 .onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
-                        console.log('Firebase data received:', data); // Debug log
-                        updateUI(data);
+                        console.log('🔥 FIREBASE DATA RECEIVED:', data); // Debug log
+                        
+                        // Check what keys exist in the data
+                        console.log('📋 Data keys:', Object.keys(data));
+                        
+                        // Try different key combinations
+                        const ronjiData = data.ronji || data.me || { likes: [], hates: [] };
+                        const mamamiaData = data.mamamia || data.her || { likes: [], hates: [] };
+                        
+                        console.log('👤 Ronji data:', ronjiData);
+                        console.log('👩 Mamamia data:', mamamiaData);
+                        
+                        updateUI({
+                            ronji: ronjiData,
+                            mamamia: mamamiaData,
+                            avatars: data.avatars || { ronji: null, mamamia: null }
+                        });
+                        
                         if (!isInitialLoad) {
                             showSyncNotification('Data updated!');
                         }
                     } else {
-                        console.log('No document found, creating initial data...'); // Debug log
+                        console.log('📭 No document found, creating initial data...');
                         // Create initial data
                         createInitialData();
                     }
                 }, (error) => {
-                    console.error('Firebase error:', error); // Debug log
+                    console.error('❌ Firebase error:', error);
                     document.getElementById('status').textContent = '⚠️ Sync error: ' + error.message;
                     document.getElementById('status').className = 'status disconnected';
                 });
@@ -359,11 +379,11 @@
             };
             
             await db.collection('preferences').doc('coupleData').set(initialData);
-            console.log('Initial data created'); // Debug log
+            console.log('✅ Initial data created');
         }
 
         function updateUI(data) {
-            console.log('Updating UI with data:', data); // Debug log
+            console.log('🎨 Updating UI with data:', data);
             
             // Update panels
             updatePanel('ronji', data.ronji || { likes: [], hates: [] });
@@ -384,15 +404,17 @@
             likesList.innerHTML = '';
             hatesList.innerHTML = '';
             
-            console.log(`Updating ${person} panel:`, data); // Debug log
+            console.log(`👤 Updating ${person} panel:`, data);
             
-            // Show empty message if no items
+            // Check if data has likes
             if (!data.likes || data.likes.length === 0) {
+                console.log(`📭 No likes found for ${person}`);
                 const emptyMsg = document.createElement('div');
                 emptyMsg.style.cssText = 'color: var(--text-secondary); font-style: italic; padding: 10px;';
                 emptyMsg.textContent = 'No likes added yet';
                 likesList.appendChild(emptyMsg);
             } else {
+                console.log(`❤️ Found ${data.likes.length} likes for ${person}:`, data.likes);
                 // Add likes
                 data.likes.forEach((item, index) => {
                     const itemEl = document.createElement('div');
@@ -407,13 +429,15 @@
                 });
             }
             
-            // Show empty message if no items
+            // Check if data has hates
             if (!data.hates || data.hates.length === 0) {
+                console.log(`📭 No hates found for ${person}`);
                 const emptyMsg = document.createElement('div');
                 emptyMsg.style.cssText = 'color: var(--text-secondary); font-style: italic; padding: 10px;';
                 emptyMsg.textContent = 'No hates added yet';
                 hatesList.appendChild(emptyMsg);
             } else {
+                console.log(`💔 Found ${data.hates.length} hates for ${person}:`, data.hates);
                 // Add hates
                 data.hates.forEach((item, index) => {
                     const itemEl = document.createElement('div');
@@ -426,71 +450,6 @@
                     `;
                     hatesList.appendChild(itemEl);
                 });
-            }
-        }
-
-        function uploadAvatar(person) {
-            const input = document.getElementById(`${person}-avatar-input`);
-            
-            // Reset the input
-            input.value = '';
-            
-            // Create new event handler
-            input.onchange = async function(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('Image too large! Max 5MB.');
-                    return;
-                }
-                
-                const reader = new FileReader();
-                
-                reader.onload = async function(e) {
-                    try {
-                        // Update Firebase
-                        await db.collection('preferences').doc('coupleData').update({
-                            [`avatars.${person}`]: e.target.result,
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        
-                        showSyncNotification('Photo updated!');
-                        
-                    } catch (error) {
-                        console.error('Error uploading avatar:', error);
-                        alert('Error uploading photo: ' + error.message);
-                    }
-                };
-                
-                reader.readAsDataURL(file);
-            };
-            
-            input.click();
-        }
-
-        function updateAvatars(avatars) {
-            if (avatars) {
-                if (avatars.ronji) {
-                    updateSingleAvatar('ronji', avatars.ronji);
-                }
-                if (avatars.mamamia) {
-                    updateSingleAvatar('mamamia', avatars.mamamia);
-                }
-            }
-        }
-
-        function updateSingleAvatar(person, imageData) {
-            const placeholder = document.getElementById(`${person}-avatar-placeholder`);
-            const img = document.getElementById(`${person}-avatar-img`);
-            
-            if (imageData) {
-                placeholder.style.display = 'none';
-                img.style.display = 'block';
-                img.src = imageData;
-            } else {
-                placeholder.style.display = 'flex';
-                img.style.display = 'none';
             }
         }
 
@@ -520,19 +479,25 @@
                 
                 if (doc.exists) {
                     const data = doc.data();
-                    // Ensure the array exists
-                    if (!data[person]) data[person] = {};
-                    if (!data[person][type]) data[person][type] = [];
+                    console.log('📝 Current data before update:', data);
+                    
+                    // Check what person key exists
+                    const personKey = data.ronji ? 'ronji' : (data.me ? 'me' : 'ronji');
+                    console.log(`🔑 Using person key: ${personKey} for ${person}`);
+                    
+                    // Ensure the structure exists
+                    if (!data[personKey]) data[personKey] = {};
+                    if (!data[personKey][type]) data[personKey][type] = [];
                     
                     // Add the new item
-                    data[person][type].push(text);
+                    data[personKey][type].push(text);
                     
-                    console.log(`Adding ${type} to ${person}:`, text); // Debug log
-                    console.log('Updated data:', data); // Debug log
+                    console.log(`➕ Adding ${type} to ${personKey}:`, text);
+                    console.log('📊 Updated data:', data);
                     
-                    // Update Firebase
+                    // Update Firebase - using the correct person key
                     await docRef.update({
-                        [`${person}.${type}`]: data[person][type],
+                        [`${personKey}.${type}`]: data[personKey][type],
                         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
@@ -540,16 +505,17 @@
                     textInput.value = '';
                     textInput.focus();
                     
-                    showSyncNotification('Added to ' + (person === 'ronji' ? 'Ronji\'s' : 'Mamamia\'s') + ' ' + type + 's!');
+                    showSyncNotification('Added to ' + (personKey === 'ronji' ? 'Ronji\'s' : 'Mamamia\'s') + ' ' + type + 's!');
                     
                 } else {
                     // Create document if it doesn't exist
+                    console.log('📄 Creating new document...');
                     await createInitialData();
                     // Try adding again
                     setTimeout(() => addItem(person, textId, typeId), 1000);
                 }
             } catch (error) {
-                console.error('Error adding item:', error);
+                console.error('❌ Error adding item:', error);
                 alert('Error adding item: ' + error.message);
             }
         }
@@ -563,13 +529,16 @@
                 
                 if (doc.exists) {
                     const data = doc.data();
-                    const items = data[person][type];
+                    
+                    // Check what person key exists
+                    const personKey = data.ronji ? 'ronji' : (data.me ? 'me' : person);
+                    const items = data[personKey] ? data[personKey][type] : [];
                     
                     if (items && items.length > index) {
                         items.splice(index, 1);
                         
                         await docRef.update({
-                            [`${person}.${type}`]: items,
+                            [`${personKey}.${type}`]: items,
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
@@ -577,23 +546,98 @@
                     }
                 }
             } catch (error) {
-                console.error('Error deleting item:', error);
+                console.error('❌ Error deleting item:', error);
                 alert('Error deleting item: ' + error.message);
             }
         }
 
+        function uploadAvatar(person) {
+            const input = document.getElementById(`${person}-avatar-input`);
+            
+            // Reset the input
+            input.value = '';
+            
+            // Create new event handler
+            input.onchange = async function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Image too large! Max 5MB.');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                
+                reader.onload = async function(e) {
+                    try {
+                        // Check what person key exists in database
+                        const docRef = db.collection('preferences').doc('coupleData');
+                        const doc = await docRef.get();
+                        const data = doc.data();
+                        const personKey = data.ronji ? 'ronji' : (data.me ? 'me' : person);
+                        
+                        // Update Firebase with correct key
+                        await docRef.update({
+                            [`avatars.${personKey}`]: e.target.result,
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        showSyncNotification('Photo updated!');
+                        
+                        // Update UI immediately
+                        if (personKey === 'ronji') {
+                            document.getElementById('ronji-avatar-placeholder').style.display = 'none';
+                            document.getElementById('ronji-avatar-img').style.display = 'block';
+                            document.getElementById('ronji-avatar-img').src = e.target.result;
+                        } else {
+                            document.getElementById('mamamia-avatar-placeholder').style.display = 'none';
+                            document.getElementById('mamamia-avatar-img').style.display = 'block';
+                            document.getElementById('mamamia-avatar-img').src = e.target.result;
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ Error uploading avatar:', error);
+                        alert('Error uploading photo: ' + error.message);
+                    }
+                };
+                
+                reader.readAsDataURL(file);
+            };
+            
+            input.click();
+        }
+
+        function updateAvatars(avatars) {
+            console.log('🖼️ Updating avatars:', avatars);
+            
+            if (avatars) {
+                if (avatars.ronji || avatars.me) {
+                    const imageData = avatars.ronji || avatars.me;
+                    document.getElementById('ronji-avatar-placeholder').style.display = 'none';
+                    document.getElementById('ronji-avatar-img').style.display = 'block';
+                    document.getElementById('ronji-avatar-img').src = imageData;
+                }
+                if (avatars.mamamia || avatars.her) {
+                    const imageData = avatars.mamamia || avatars.her;
+                    document.getElementById('mamamia-avatar-placeholder').style.display = 'none';
+                    document.getElementById('mamamia-avatar-img').style.display = 'block';
+                    document.getElementById('mamamia-avatar-img').src = imageData;
+                }
+            }
+        }
+
         function updateStats(data) {
-            const ronji = data.ronji || { likes: [], hates: [] };
-            const mamamia = data.mamamia || { likes: [], hates: [] };
+            const ronjiData = data.ronji || data.me || { likes: [], hates: [] };
+            const mamamiaData = data.mamamia || data.her || { likes: [], hates: [] };
             
-            document.getElementById('ronji-total-count').textContent = ronji.likes.length + ronji.hates.length;
-            document.getElementById('mamamia-total-count').textContent = mamamia.likes.length + mamamia.hates.length;
+            const ronjiTotal = (ronjiData.likes ? ronjiData.likes.length : 0) + (ronjiData.hates ? ronjiData.hates.length : 0);
+            const mamamiaTotal = (mamamiaData.likes ? mamamiaData.likes.length : 0) + (mamamiaData.hates ? mamamiaData.hates.length : 0);
             
-            // Calculate shared likes (simple version)
-            const ronjiLikes = ronji.likes ? ronji.likes.map(l => l.toLowerCase()) : [];
-            const mamamiaLikes = mamamia.likes ? mamamia.likes.map(l => l.toLowerCase()) : [];
-            const shared = ronjiLikes.filter(like => mamamiaLikes.includes(like)).length;
-            document.getElementById('shared-likes-count').textContent = shared;
+            document.getElementById('ronji-total-count').textContent = ronjiTotal;
+            document.getElementById('mamamia-total-count').textContent = mamamiaTotal;
+            
+            console.log('📊 Stats updated:', { ronjiTotal, mamamiaTotal });
         }
 
         function switchUser() {
@@ -653,9 +697,9 @@
             document.getElementById('status').textContent = '📴 Using offline mode';
             document.getElementById('status').className = 'status disconnected';
             
-            // Simple localStorage implementation
-            console.log('Using localStorage fallback');
+            console.log('📱 Using localStorage fallback');
         }
     </script>
 </body>
 </html>
+
