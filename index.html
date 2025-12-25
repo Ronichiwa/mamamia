@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Likes & Hates</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-container">
+            <button class="theme-toggle" id="themeToggle">
+                <span class="theme-icon" id="themeIcon">🌙</span>
+                <span id="themeText">Dark Mode</span>
+            </button>
+        </div>
+        
+        <header>
+            <h1><i class="fas fa-heart"></i> Our Likes & Hates</h1>
+            <p class="subtitle">A fun way to track what we love and what we don't. Add, manage, and discover shared preferences in our relationship.</p>
+        </header>
+        
+        <div class="couple-container">
+            <!-- My Panel -->
+            <div class="person-panel">
+                <div class="person-header me">
+                    <div class="avatar-container">
+                        <div class="avatar" id="my-avatar">
+                            <div class="avatar-placeholder" id="my-avatar-placeholder">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <img class="avatar-img" id="my-avatar-img" style="display: none;" alt="My photo">
+                        </div>
+                        <button class="upload-btn" onclick="document.getElementById('my-avatar-input').click()">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <input type="file" id="my-avatar-input" accept="image/*" style="display: none;" onchange="uploadMyAvatar(event)">
+                    </div>
+                    <div class="person-info">
+                        <h2>Me</h2>
+                        <p>The one who loves you endlessly</p>
+                    </div>
+                </div>
+                
+                <div class="likes-hates-container">
+                    <h3 class="section-title likes-title"><i class="fas fa-heart"></i> Things I Like</h3>
+                    <div class="items-list" id="my-likes-list">
+                        <!-- Likes will be loaded here -->
+                    </div>
+                    
+                    <h3 class="section-title hates-title"><i class="fas fa-times-circle"></i> Things I Hate</h3>
+                    <div class="items-list" id="my-hates-list">
+                        <!-- Hates will be loaded here -->
+                    </div>
+                    
+                    <div class="add-form">
+                        <h3>Add New Item</h3>
+                        <div class="form-group">
+                            <input type="text" id="my-item-text" placeholder="Enter something I like or hate...">
+                            <select id="my-item-type">
+                                <option value="like">Like</option>
+                                <option value="hate">Hate</option>
+                            </select>
+                            <button onclick="addMyItem()">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Her Panel -->
+            <div class="person-panel">
+                <div class="person-header her">
+                    <div class="avatar-container">
+                        <div class="avatar" id="her-avatar">
+                            <div class="avatar-placeholder" id="her-avatar-placeholder">
+                                <i class="fas fa-user-female"></i>
+                            </div>
+                            <img class="avatar-img" id="her-avatar-img" style="display: none;" alt="Her photo">
+                        </div>
+                        <button class="upload-btn" onclick="document.getElementById('her-avatar-input').click()">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <input type="file" id="her-avatar-input" accept="image/*" style="display: none;" onchange="uploadHerAvatar(event)">
+                    </div>
+                    <div class="person-info">
+                        <h2>Her</h2>
+                        <p>The amazing woman in my life</p>
+                    </div>
+                </div>
+                
+                <div class="likes-hates-container">
+                    <h3 class="section-title likes-title"><i class="fas fa-heart"></i> Things She Likes</h3>
+                    <div class="items-list" id="her-likes-list">
+                        <!-- Likes will be loaded here -->
+                    </div>
+                    
+                    <h3 class="section-title hates-title"><i class="fas fa-times-circle"></i> Things She Hates</h3>
+                    <div class="items-list" id="her-hates-list">
+                        <!-- Hates will be loaded here -->
+                    </div>
+                    
+                    <div class="add-form">
+                        <h3>Add New Item</h3>
+                        <div class="form-group">
+                            <input type="text" id="her-item-text" placeholder="Enter something she likes or hates...">
+                            <select id="her-item-type">
+                                <option value="like">Like</option>
+                                <option value="hate">Hate</option>
+                            </select>
+                            <button onclick="addHerItem()">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistics Section -->
+        <div class="stats-section">
+            <h2 class="stats-title">Our Relationship Stats</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">My Total Items</div>
+                    <div class="stat-value me-stat" id="my-total-count">0</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Her Total Items</div>
+                    <div class="stat-value her-stat" id="her-total-count">0</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Shared Likes</div>
+                    <div class="stat-value shared-stat" id="shared-likes-count">0</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Opposite Opinions</div>
+                    <div class="stat-value" id="opposite-count">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Database Info -->
+        <div class="database-info">
+            <h2><i class="fas fa-database"></i> Data Storage</h2>
+            <p>All your data is securely stored in your browser. To access it from multiple devices or share with your girlfriend, you'll need to:</p>
+            
+            <div class="vercel-steps">
+                <h3>Ready for Multi-Device Access:</h3>
+                <ol>
+                    <li><strong>Export your data</strong> using the button below</li>
+                    <li><strong>Import on another device</strong> to sync</li>
+                    <li><strong>Share the JSON file</strong> with your girlfriend</li>
+                    <li>She can import it on her device</li>
+                </ol>
+            </div>
+            
+            <div class="api-test">
+                <h3>Data Management:</h3>
+                <div class="export-import">
+                    <button class="btn-primary" onclick="exportData()">
+                        <i class="fas fa-download"></i> Export All Data (JSON)
+                    </button>
+                    <button class="btn-primary" onclick="importData()">
+                        <i class="fas fa-upload"></i> Import Data
+                    </button>
+                    <button class="btn-primary" onclick="resetData()">
+                        <i class="fas fa-redo"></i> Reset to Sample Data
+                    </button>
+                </div>
+                <p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-secondary);">
+                    <i class="fas fa-info-circle"></i> Exports include both your preferences and profile pictures.
+                </p>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Made with <i class="fas fa-heart" style="color:#ff6b8b;"></i> for the most amazing girlfriend | Hosted on Vercel</p>
+        </footer>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
