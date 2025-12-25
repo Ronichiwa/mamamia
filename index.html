@@ -10,30 +10,38 @@
             --bg-primary: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
             --card-bg: #ffffff; 
             --text-primary: #333333; 
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --item-bg: #f8f9fa;
+            --stat-card-bg: #f8f9fa;
         }
         [data-theme="dark"] { 
             --bg-primary: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); 
             --card-bg: #1e1e2e; 
-            --text-primary: #ffffff; 
+            --text-primary: #e0e0e0; 
+            --text-secondary: #b0b0b0;
+            --border-color: #3a3a4e;
+            --item-bg: #2a2a3e;
+            --stat-card-bg: #2a2a3e;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         body { background: var(--bg-primary); min-height: 100vh; padding: 20px; color: var(--text-primary); }
         .container { max-width: 1200px; margin: 0 auto; }
         
         .theme-toggle-container { display: flex; justify-content: flex-end; margin-bottom: 20px; }
-        .theme-toggle { background: var(--card-bg); border: 2px solid #ddd; color: var(--text-primary); padding: 10px 20px; border-radius: 50px; cursor: pointer; }
+        .theme-toggle { background: var(--card-bg); border: 2px solid var(--border-color); color: var(--text-primary); padding: 10px 20px; border-radius: 50px; cursor: pointer; }
         
-        header { text-align: center; margin-bottom: 40px; padding: 30px; background: var(--card-bg); border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        header { text-align: center; margin-bottom: 40px; padding: 30px; background: var(--card-bg); border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
         h1 { color: #ff6b8b; font-size: 2.8rem; margin-bottom: 10px; }
-        .subtitle { color: #666; font-size: 1.2rem; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+        .subtitle { color: var(--text-secondary); font-size: 1.2rem; max-width: 800px; margin: 0 auto; line-height: 1.6; }
         
         .couple-container { display: flex; flex-wrap: wrap; gap: 30px; margin-bottom: 40px; }
-        .person-panel { flex: 1; min-width: 300px; background: var(--card-bg); border-radius: 15px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .person-panel { flex: 1; min-width: 300px; background: var(--card-bg); border-radius: 15px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
         .person-header { padding: 25px; color: white; display: flex; align-items: center; gap: 20px; }
         .person-header.me { background: linear-gradient(to right, #4b6cb7, #182848); }
         .person-header.her { background: linear-gradient(to right, #ff6b8b, #ff8e53); }
         
-        /* ✅ FIXED: Avatar Container */
+        /* Avatar Container */
         .avatar-container { 
             position: relative; 
             width: 100px; 
@@ -60,7 +68,6 @@
             top: 0;
             left: 0;
         }
-        /* ✅ FIXED: Camera Icon Position */
         .upload-btn { 
             position: absolute; 
             bottom: -5px; 
@@ -85,13 +92,45 @@
         }
         
         .likes-hates-container { padding: 25px; }
-        .items-list { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; }
-        .item { background: #f8f9fa; padding: 12px 20px; border-radius: 50px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #ddd; }
-        .item button { background: transparent; color: #888; border: none; cursor: pointer; padding: 5px 10px; }
+        .items-list { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; min-height: 60px; }
+        .item { 
+            background: var(--item-bg); 
+            padding: 12px 20px; 
+            border-radius: 50px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .item button { 
+            background: transparent; 
+            color: var(--text-secondary); 
+            border: none; 
+            cursor: pointer; 
+            padding: 5px 10px; 
+            margin-left: 10px;
+        }
         .item button:hover { color: #ff4444; }
-        .add-form { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        
+        .add-form { 
+            background: var(--item-bg); 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-top: 20px; 
+            border: 1px solid var(--border-color);
+        }
+        .add-form h3 { color: var(--text-primary); margin-bottom: 15px; }
         .form-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        input, select { flex: 1; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        input, select { 
+            flex: 1; 
+            padding: 12px 15px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            font-size: 1rem; 
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
         button:not(.upload-btn):not(.item button) { 
             background: #4b6cb7; 
             color: white; 
@@ -107,25 +146,40 @@
             transform: translateY(-2px); 
         }
         
-        .stats-section { background: var(--card-bg); border-radius: 15px; padding: 25px; margin-bottom: 40px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .stats-section { 
+            background: var(--card-bg); 
+            border-radius: 15px; 
+            padding: 25px; 
+            margin-bottom: 40px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1); 
+            border: 1px solid var(--border-color);
+        }
+        .stats-section h2 { color: var(--text-primary); text-align: center; margin-bottom: 20px; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 10px; text-align: center; }
+        .stat-card { 
+            background: var(--stat-card-bg); 
+            padding: 20px; 
+            border-radius: 10px; 
+            text-align: center; 
+            border: 1px solid var(--border-color);
+        }
+        .stat-label { color: var(--text-secondary); font-size: 1rem; margin-bottom: 10px; }
         .stat-value { font-size: 2.2rem; font-weight: bold; margin: 10px 0; }
         .me-stat { color: #4b6cb7; }
         .her-stat { color: #ff6b8b; }
         
-        footer { text-align: center; margin-top: 40px; padding: 20px; color: #666; font-size: 0.9rem; }
+        footer { text-align: center; margin-top: 40px; padding: 20px; color: var(--text-secondary); font-size: 0.9rem; }
         
         .user-indicator { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 20px; }
         .btn-switch { background: transparent; border: 2px solid #ff6b8b; color: #ff6b8b; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: 600; }
         .btn-switch:hover { background: rgba(255,107,139,0.1); }
         
-        .status { padding: 10px 15px; border-radius: 5px; margin: 10px 0; text-align: center; font-weight: 500; }
-        .connected { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #4CAF50; }
-        .disconnected { background: #ffebee; color: #c62828; border-left: 4px solid #F44336; }
+        .status { padding: 10px 15px; border-radius: 5px; margin: 10px 0; text-align: center; font-weight: 500; border-left: 4px solid; }
+        .connected { background: rgba(76, 175, 80, 0.1); color: #2e7d32; border-left-color: #4CAF50; }
+        .disconnected { background: rgba(244, 67, 54, 0.1); color: #c62828; border-left-color: #F44336; }
         
         .loading { text-align: center; padding: 40px; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        .spinner { border: 4px solid var(--border-color); border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         /* Sync notification */
@@ -148,6 +202,9 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+        
+        /* Loading text */
+        #loadingText { color: var(--text-secondary); margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -159,7 +216,7 @@
             </button>
         </div>
         
-        <div class="status connected" id="status">✅ Connected to Firebase!</div>
+        <div class="status connected" id="status">✅ Connected to Firebase! Real-time sync active</div>
         
         <header>
             <h1><i class="fas fa-heart"></i> Our Likes & Hates</h1>
@@ -205,10 +262,14 @@
                     
                     <div class="likes-hates-container">
                         <h3><i class="fas fa-heart" style="color:#4CAF50;"></i> Things I Like</h3>
-                        <div class="items-list" id="my-likes-list"></div>
+                        <div class="items-list" id="my-likes-list">
+                            <div style="color: var(--text-secondary); font-style: italic; padding: 10px;" id="my-likes-empty">No likes added yet</div>
+                        </div>
                         
                         <h3><i class="fas fa-times-circle" style="color:#F44336;"></i> Things I Hate</h3>
-                        <div class="items-list" id="my-hates-list"></div>
+                        <div class="items-list" id="my-hates-list">
+                            <div style="color: var(--text-secondary); font-style: italic; padding: 10px;" id="my-hates-empty">No hates added yet</div>
+                        </div>
                         
                         <div class="add-form">
                             <h3>Add New Item</h3>
@@ -247,10 +308,14 @@
                     
                     <div class="likes-hates-container">
                         <h3><i class="fas fa-heart" style="color:#4CAF50;"></i> Things She Likes</h3>
-                        <div class="items-list" id="her-likes-list"></div>
+                        <div class="items-list" id="her-likes-list">
+                            <div style="color: var(--text-secondary); font-style: italic; padding: 10px;" id="her-likes-empty">No likes added yet</div>
+                        </div>
                         
                         <h3><i class="fas fa-times-circle" style="color:#F44336;"></i> Things She Hates</h3>
-                        <div class="items-list" id="her-hates-list"></div>
+                        <div class="items-list" id="her-hates-list">
+                            <div style="color: var(--text-secondary); font-style: italic; padding: 10px;" id="her-hates-empty">No hates added yet</div>
+                        </div>
                         
                         <div class="add-form">
                             <h3>Add New Item</h3>
@@ -271,23 +336,23 @@
                 <h2>Our Relationship Stats</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div>My Total Items</div>
+                        <div class="stat-label">My Total Items</div>
                         <div class="stat-value me-stat" id="my-total-count">0</div>
                     </div>
                     <div class="stat-card">
-                        <div>Her Total Items</div>
+                        <div class="stat-label">Her Total Items</div>
                         <div class="stat-value her-stat" id="her-total-count">0</div>
                     </div>
                     <div class="stat-card">
-                        <div>Shared Likes</div>
+                        <div class="stat-label">Shared Likes</div>
                         <div class="stat-value" id="shared-likes-count">0</div>
                     </div>
                     <div class="stat-card">
-                        <div>Opposite Opinions</div>
+                        <div class="stat-label">Opposite Opinions</div>
                         <div class="stat-value" id="opposite-count">0</div>
                     </div>
                 </div>
-                <div style="text-align: center; margin-top: 20px; color: #666; font-size: 0.9rem;">
+                <div style="text-align: center; margin-top: 20px; color: var(--text-secondary); font-size: 0.9rem;">
                     <i class="fas fa-sync-alt"></i> Real-time updates active
                 </div>
             </div>
@@ -317,6 +382,7 @@
         // Global variables
         let db = null;
         let unsubscribe = null;
+        let isInitialLoad = true;
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
@@ -330,9 +396,12 @@
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
                 
-                // Show content
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('mainContent').style.display = 'block';
+                // Hide loading after a moment
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('mainContent').style.display = 'block';
+                    isInitialLoad = false;
+                }, 1000);
                 
                 // Set up real-time listener
                 setupRealtimeListener();
@@ -367,7 +436,9 @@
                     if (doc.exists) {
                         const data = doc.data();
                         updateUI(data);
-                        showSyncNotification('Data updated!');
+                        if (!isInitialLoad) {
+                            showSyncNotification('Data updated!');
+                        }
                     } else {
                         // Create initial data
                         createInitialData();
@@ -413,39 +484,58 @@
         function updatePanel(person, data) {
             const likesList = document.getElementById(`${person}-likes-list`);
             const hatesList = document.getElementById(`${person}-hates-list`);
+            const likesEmpty = document.getElementById(`${person}-likes-empty`);
+            const hatesEmpty = document.getElementById(`${person}-hates-empty`);
             
-            likesList.innerHTML = '';
-            hatesList.innerHTML = '';
+            // Clear existing items
+            while (likesList.firstChild && likesList.firstChild !== likesEmpty) {
+                likesList.removeChild(likesList.firstChild);
+            }
+            while (hatesList.firstChild && hatesList.firstChild !== hatesEmpty) {
+                hatesList.removeChild(hatesList.firstChild);
+            }
             
-            (data.likes || []).forEach((item, index) => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'item';
-                itemEl.innerHTML = `
-                    <span><i class="fas fa-heart" style="color:#4CAF50;"></i> ${item}</span>
-                    <button onclick="deleteItem('${person}', 'like', ${index})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                `;
-                likesList.appendChild(itemEl);
-            });
+            // Add likes
+            if (data.likes && data.likes.length > 0) {
+                likesEmpty.style.display = 'none';
+                data.likes.forEach((item, index) => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'item';
+                    itemEl.innerHTML = `
+                        <span><i class="fas fa-heart" style="color:#4CAF50;"></i> ${item}</span>
+                        <button onclick="deleteItem('${person}', 'like', ${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                    likesList.appendChild(itemEl);
+                });
+            } else {
+                likesEmpty.style.display = 'block';
+            }
             
-            (data.hates || []).forEach((item, index) => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'item';
-                itemEl.innerHTML = `
-                    <span><i class="fas fa-times-circle" style="color:#F44336;"></i> ${item}</span>
-                    <button onclick="deleteItem('${person}', 'hate', ${index})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                `;
-                hatesList.appendChild(itemEl);
-            });
+            // Add hates
+            if (data.hates && data.hates.length > 0) {
+                hatesEmpty.style.display = 'none';
+                data.hates.forEach((item, index) => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'item';
+                    itemEl.innerHTML = `
+                        <span><i class="fas fa-times-circle" style="color:#F44336;"></i> ${item}</span>
+                        <button onclick="deleteItem('${person}', 'hate', ${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                    hatesList.appendChild(itemEl);
+                });
+            } else {
+                hatesEmpty.style.display = 'block';
+            }
         }
 
-        // ✅ FIXED: Avatar upload function
         function uploadAvatar(person) {
             const input = document.getElementById(`${person}-avatar-input`);
             
+            // Create a new function each time to avoid closure issues
             input.onchange = async function(event) {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -465,13 +555,11 @@
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
-                        // Update UI immediately
-                        updateSingleAvatar(person, e.target.result);
                         showSyncNotification('Photo updated!');
                         
                     } catch (error) {
                         console.error('Error uploading avatar:', error);
-                        alert('Error uploading photo. Please try again.');
+                        alert('Error uploading photo: ' + error.message);
                     }
                 };
                 
@@ -492,7 +580,6 @@
             }
         }
 
-        // ✅ FIXED: Single avatar update
         function updateSingleAvatar(person, imageData) {
             const placeholder = document.getElementById(`${person}-avatar-placeholder`);
             const img = document.getElementById(`${person}-avatar-img`);
@@ -546,7 +633,7 @@
                 }
             } catch (error) {
                 console.error('Error adding item:', error);
-                alert('Error adding item. Please try again.');
+                alert('Error adding item: ' + error.message);
             }
         }
 
@@ -560,18 +647,21 @@
                 if (doc.exists) {
                     const data = doc.data();
                     const items = data[person][type];
-                    items.splice(index, 1);
                     
-                    await docRef.update({
-                        [`${person}.${type}`]: items,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    showSyncNotification('Item deleted!');
+                    if (items && items.length > index) {
+                        items.splice(index, 1);
+                        
+                        await docRef.update({
+                            [`${person}.${type}`]: items,
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        showSyncNotification('Item deleted!');
+                    }
                 }
             } catch (error) {
                 console.error('Error deleting item:', error);
-                alert('Error deleting item. Please try again.');
+                alert('Error deleting item: ' + error.message);
             }
         }
 
