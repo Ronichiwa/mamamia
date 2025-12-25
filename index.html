@@ -256,7 +256,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-       <script>
+    <script>
         // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyCt-7dABHqoIkigD5M3iG4seJtyj-z8Ehs",
@@ -328,14 +328,41 @@
                 .onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
-                        console.log('🔥 FIREBASE DATA RECEIVED:', data); // Debug log
+                        console.log('🔥 FIREBASE DATA RECEIVED:', data);
                         
-                        // Check what keys exist in the data
-                        console.log('📋 Data keys:', Object.keys(data));
+                        // Debug: List all available keys
+                        console.log('📋 All keys in document:', Object.keys(data));
                         
-                        // Try different key combinations
-                        const ronjiData = data.ronji || data.me || { likes: [], hates: [] };
-                        const mamamiaData = data.mamamia || data.her || { likes: [], hates: [] };
+                        // Check for both naming conventions
+                        let ronjiData, mamamiaData;
+                        
+                        if (data.ronji) {
+                            // If using 'ronji' key
+                            ronjiData = data.ronji;
+                            console.log('✅ Found Ronji data using "ronji" key');
+                        } else if (data.me) {
+                            // If using 'me' key
+                            ronjiData = data.me;
+                            console.log('✅ Found Ronji data using "me" key');
+                        } else {
+                            // Fallback
+                            ronjiData = { likes: [], hates: [] };
+                            console.log('⚠️ No Ronji data found, using empty');
+                        }
+                        
+                        if (data.mamamia) {
+                            // If using 'mamamia' key
+                            mamamiaData = data.mamamia;
+                            console.log('✅ Found Mamamia data using "mamamia" key');
+                        } else if (data.her) {
+                            // If using 'her' key
+                            mamamiaData = data.her;
+                            console.log('✅ Found Mamamia data using "her" key');
+                        } else {
+                            // Fallback
+                            mamamiaData = { likes: [], hates: [] };
+                            console.log('⚠️ No Mamamia data found, using empty');
+                        }
                         
                         console.log('👤 Ronji data:', ronjiData);
                         console.log('👩 Mamamia data:', mamamiaData);
@@ -351,7 +378,7 @@
                         }
                     } else {
                         console.log('📭 No document found, creating initial data...');
-                        // Create initial data
+                        // Create initial data with consistent naming
                         createInitialData();
                     }
                 }, (error) => {
@@ -481,31 +508,57 @@
                     const data = doc.data();
                     console.log('📝 Current data before update:', data);
                     
-                    // Check what person key exists
-                    const personKey = data.ronji ? 'ronji' : (data.me ? 'me' : 'ronji');
-                    console.log(`🔑 Using person key: ${personKey} for ${person}`);
+                    // Determine which key to use based on what exists
+                    let personKey;
+                    let personName;
                     
-                    // Ensure the structure exists
-                    if (!data[personKey]) data[personKey] = {};
-                    if (!data[personKey][type]) data[personKey][type] = [];
+                    if (person === 'ronji') {
+                        // Check what key exists for Ronji
+                        if (data.ronji) {
+                            personKey = 'ronji';
+                            personName = 'Ronji';
+                        } else if (data.me) {
+                            personKey = 'me';
+                            personName = 'Ronji';
+                        } else {
+                            personKey = 'ronji';
+                            personName = 'Ronji';
+                        }
+                    } else if (person === 'mamamia') {
+                        // Check what key exists for Mamamia
+                        if (data.mamamia) {
+                            personKey = 'mamamia';
+                            personName = 'Mamamia';
+                        } else if (data.her) {
+                            personKey = 'her';
+                            personName = 'Mamamia';
+                        } else {
+                            personKey = 'mamamia';
+                            personName = 'Mamamia';
+                        }
+                    }
                     
-                    // Add the new item
-                    data[personKey][type].push(text);
+                    console.log(`🔑 Using key "${personKey}" for ${personName}`);
                     
-                    console.log(`➕ Adding ${type} to ${personKey}:`, text);
-                    console.log('📊 Updated data:', data);
+                    // Create update object
+                    const updateData = {};
+                    const currentItems = data[personKey] ? data[personKey][type] || [] : [];
                     
-                    // Update Firebase - using the correct person key
-                    await docRef.update({
-                        [`${personKey}.${type}`]: data[personKey][type],
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    // Add new item to array
+                    updateData[`${personKey}.${type}`] = [...currentItems, text];
+                    updateData.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
+                    
+                    console.log(`➕ Adding to ${personName}'s ${type}s:`, text);
+                    console.log('📊 Update data:', updateData);
+                    
+                    // Update Firebase
+                    await docRef.update(updateData);
                     
                     // Clear input and focus
                     textInput.value = '';
                     textInput.focus();
                     
-                    showSyncNotification('Added to ' + (personKey === 'ronji' ? 'Ronji\'s' : 'Mamamia\'s') + ' ' + type + 's!');
+                    showSyncNotification(`Added to ${personName}'s ${type}s!`);
                     
                 } else {
                     // Create document if it doesn't exist
@@ -530,8 +583,14 @@
                 if (doc.exists) {
                     const data = doc.data();
                     
-                    // Check what person key exists
-                    const personKey = data.ronji ? 'ronji' : (data.me ? 'me' : person);
+                    // Determine which key to use
+                    let personKey;
+                    if (person === 'ronji') {
+                        personKey = data.ronji ? 'ronji' : (data.me ? 'me' : 'ronji');
+                    } else {
+                        personKey = data.mamamia ? 'mamamia' : (data.her ? 'her' : 'mamamia');
+                    }
+                    
                     const items = data[personKey] ? data[personKey][type] : [];
                     
                     if (items && items.length > index) {
@@ -575,18 +634,25 @@
                         const docRef = db.collection('preferences').doc('coupleData');
                         const doc = await docRef.get();
                         const data = doc.data();
-                        const personKey = data.ronji ? 'ronji' : (data.me ? 'me' : person);
+                        
+                        // Determine correct key for avatar
+                        let avatarKey;
+                        if (person === 'ronji') {
+                            avatarKey = data.ronji ? 'ronji' : (data.me ? 'me' : 'ronji');
+                        } else {
+                            avatarKey = data.mamamia ? 'mamamia' : (data.her ? 'her' : 'mamamia');
+                        }
                         
                         // Update Firebase with correct key
                         await docRef.update({
-                            [`avatars.${personKey}`]: e.target.result,
+                            [`avatars.${avatarKey}`]: e.target.result,
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
                         showSyncNotification('Photo updated!');
                         
                         // Update UI immediately
-                        if (personKey === 'ronji') {
+                        if (avatarKey === 'ronji' || avatarKey === 'me') {
                             document.getElementById('ronji-avatar-placeholder').style.display = 'none';
                             document.getElementById('ronji-avatar-img').style.display = 'block';
                             document.getElementById('ronji-avatar-img').src = e.target.result;
@@ -612,17 +678,24 @@
             console.log('🖼️ Updating avatars:', avatars);
             
             if (avatars) {
+                // Update Ronji's avatar
                 if (avatars.ronji || avatars.me) {
                     const imageData = avatars.ronji || avatars.me;
                     document.getElementById('ronji-avatar-placeholder').style.display = 'none';
-                    document.getElementById('ronji-avatar-img').style.display = 'block';
-                    document.getElementById('ronji-avatar-img').src = imageData;
+                    const ronjiImg = document.getElementById('ronji-avatar-img');
+                    ronjiImg.style.display = 'block';
+                    ronjiImg.src = imageData;
+                    console.log('✅ Updated Ronji avatar');
                 }
+                
+                // Update Mamamia's avatar
                 if (avatars.mamamia || avatars.her) {
                     const imageData = avatars.mamamia || avatars.her;
                     document.getElementById('mamamia-avatar-placeholder').style.display = 'none';
-                    document.getElementById('mamamia-avatar-img').style.display = 'block';
-                    document.getElementById('mamamia-avatar-img').src = imageData;
+                    const mamamiaImg = document.getElementById('mamamia-avatar-img');
+                    mamamiaImg.style.display = 'block';
+                    mamamiaImg.src = imageData;
+                    console.log('✅ Updated Mamamia avatar');
                 }
             }
         }
@@ -699,7 +772,20 @@
             
             console.log('📱 Using localStorage fallback');
         }
+
+        // Debug function to check Firebase data
+        async function checkFirebaseData() {
+            try {
+                const doc = await db.collection('preferences').doc('coupleData').get();
+                if (doc.exists) {
+                    console.log('🔍 CURRENT FIREBASE DATA STRUCTURE:', doc.data());
+                } else {
+                    console.log('📭 No data found');
+                }
+            } catch (error) {
+                console.error('❌ Error checking data:', error);
+            }
+        }
     </script>
 </body>
 </html>
-
