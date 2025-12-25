@@ -46,7 +46,7 @@
         
         .person-header { padding: 25px; color: white; display: flex; align-items: center; gap: 20px; }
         .person-header.ronji { background: linear-gradient(to right, #4b6cb7, #182848); }
-        .person-header.mamamia { background: linear-gradient(to right, #9c27b0, #7b1fa2); } /* Changed from pink to purple */
+        .person-header.mamamia { background: linear-gradient(to right, #9c27b0, #7b1fa2); }
         
         .avatar-container { position: relative; width: 100px; height: 100px; }
         .avatar { width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; border: 4px solid rgba(255,255,255,0.3); overflow: hidden; background: rgba(255,255,255,0.1); position: relative; }
@@ -74,7 +74,7 @@
         .stat-label { color: var(--text-secondary); font-size: 1rem; margin-bottom: 10px; }
         .stat-value { font-size: 2.2rem; font-weight: bold; margin: 10px 0; }
         .ronji-stat { color: #4b6cb7; }
-        .mamamia-stat { color: #9c27b0; } /* Changed from pink to purple */
+        .mamamia-stat { color: #9c27b0; }
         
         footer { text-align: center; margin-top: 40px; padding: 20px; color: var(--text-secondary); font-size: 0.9rem; }
         
@@ -91,9 +91,11 @@
         
         #loadingText { color: var(--text-secondary); margin-top: 10px; }
         
-        .reset-button-container { text-align: center; margin-top: 20px; }
+        .reset-button-container { text-align: center; margin-top: 20px; display: flex; justify-content: center; gap: 10px; }
         .reset-btn { background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
         .reset-btn:hover { background: #f57c00; transform: translateY(-2px); }
+        .clean-btn { background: #9c27b0; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+        .clean-btn:hover { background: #7b1fa2; transform: translateY(-2px); }
     </style>
 </head>
 <body>
@@ -114,6 +116,9 @@
             <div class="reset-button-container">
                 <button class="reset-btn" onclick="resetRonjiData()">
                     <i class="fas fa-redo"></i> Reset Ronji's Data
+                </button>
+                <button class="clean-btn" onclick="cleanDatabaseStructure()">
+                    <i class="fas fa-broom"></i> Clean Database
                 </button>
             </div>
         </header>
@@ -327,55 +332,18 @@
                         const data = doc.data();
                         console.log('🔥 FIREBASE DATA RECEIVED:', data);
                         
-                        // Debug: List all available keys
-                        console.log('📋 All keys in document:', Object.keys(data));
+                        // Clean and standardize the data structure
+                        const standardizedData = standardizeDataStructure(data);
+                        console.log('🔄 STANDARDIZED DATA:', standardizedData);
                         
-                        // Check for both naming conventions
-                        let ronjiData, mamamiaData;
-                        
-                        if (data.ronji) {
-                            // If using 'ronji' key
-                            ronjiData = data.ronji;
-                            console.log('✅ Found Ronji data using "ronji" key');
-                        } else if (data.me) {
-                            // If using 'me' key
-                            ronjiData = data.me;
-                            console.log('✅ Found Ronji data using "me" key');
-                        } else {
-                            // Fallback
-                            ronjiData = { likes: [], hates: [] };
-                            console.log('⚠️ No Ronji data found, using empty');
-                        }
-                        
-                        if (data.mamamia) {
-                            // If using 'mamamia' key
-                            mamamiaData = data.mamamia;
-                            console.log('✅ Found Mamamia data using "mamamia" key');
-                        } else if (data.her) {
-                            // If using 'her' key
-                            mamamiaData = data.her;
-                            console.log('✅ Found Mamamia data using "her" key');
-                        } else {
-                            // Fallback
-                            mamamiaData = { likes: [], hates: [] };
-                            console.log('⚠️ No Mamamia data found, using empty');
-                        }
-                        
-                        console.log('👤 Ronji data:', ronjiData);
-                        console.log('👩 Mamamia data:', mamamiaData);
-                        
-                        updateUI({
-                            ronji: ronjiData,
-                            mamamia: mamamiaData,
-                            avatars: data.avatars || { ronji: null, mamamia: null }
-                        });
+                        // Update UI with standardized data
+                        updateUI(standardizedData);
                         
                         if (!isInitialLoad) {
                             showSyncNotification('Data updated!');
                         }
                     } else {
                         console.log('📭 No document found, creating initial data...');
-                        // Create initial data with consistent naming
                         createInitialData();
                     }
                 }, (error) => {
@@ -385,8 +353,61 @@
                 });
         }
 
+        function standardizeDataStructure(data) {
+            const result = {
+                ronji: { likes: [], hates: [] },
+                mamamia: { likes: [], hates: [] },
+                avatars: data.avatars || { ronji: null, mamamia: null }
+            };
+            
+            // Handle Ronji's data - check all possible keys
+            let ronjiLikes = [];
+            let ronjiHates = [];
+            
+            // Check ronji key
+            if (data.ronji) {
+                if (Array.isArray(data.ronji.likes)) ronjiLikes = [...ronjiLikes, ...data.ronji.likes];
+                if (Array.isArray(data.ronji.hates)) ronjiHates = [...ronjiHates, ...data.ronji.hates];
+                if (Array.isArray(data.ronji.like)) ronjiLikes = [...ronjiLikes, ...data.ronji.like];
+            }
+            
+            // Check me key
+            if (data.me) {
+                if (Array.isArray(data.me.likes)) ronjiLikes = [...ronjiLikes, ...data.me.likes];
+                if (Array.isArray(data.me.hates)) ronjiHates = [...ronjiHates, ...data.me.hates];
+                if (Array.isArray(data.me.like)) ronjiLikes = [...ronjiLikes, ...data.me.like];
+            }
+            
+            // Handle Mamamia's data - check all possible keys
+            let mamamiaLikes = [];
+            let mamamiaHates = [];
+            
+            // Check mamamia key
+            if (data.mamamia) {
+                if (Array.isArray(data.mamamia.likes)) mamamiaLikes = [...mamamiaLikes, ...data.mamamia.likes];
+                if (Array.isArray(data.mamamia.hates)) mamamiaHates = [...mamamiaHates, ...data.mamamia.hates];
+                if (Array.isArray(data.mamamia.like)) mamamiaLikes = [...mamamiaLikes, ...data.mamamia.like];
+            }
+            
+            // Check her key
+            if (data.her) {
+                if (Array.isArray(data.her.likes)) mamamiaLikes = [...mamamiaLikes, ...data.her.likes];
+                if (Array.isArray(data.her.hates)) mamamiaHates = [...mamamiaHates, ...data.her.hates];
+                if (Array.isArray(data.her.like)) mamamiaLikes = [...mamamiaLikes, ...data.her.like];
+            }
+            
+            // Remove duplicates and empty strings
+            result.ronji.likes = [...new Set(ronjiLikes.filter(item => item && item.trim()))];
+            result.ronji.hates = [...new Set(ronjiHates.filter(item => item && item.trim()))];
+            result.mamamia.likes = [...new Set(mamamiaLikes.filter(item => item && item.trim()))];
+            result.mamamia.hates = [...new Set(mamamiaHates.filter(item => item && item.trim()))];
+            
+            return result;
+        }
+
         async function createInitialData() {
             const initialData = {
+                // Use only consistent keys
                 ronji: {
                     likes: ["Watching movies together", "Mamamia's smile in the morning"],
                     hates: ["Being away from Mamamia", "When she's upset"]
@@ -403,15 +424,15 @@
             };
             
             await db.collection('preferences').doc('coupleData').set(initialData);
-            console.log('✅ Initial data created');
+            console.log('✅ Initial data created with consistent keys');
         }
 
         function updateUI(data) {
-            console.log('🎨 Updating UI with data:', data);
+            console.log('🎨 Updating UI with standardized data:', data);
             
-            // Update panels
-            updatePanel('ronji', data.ronji || { likes: [], hates: [] });
-            updatePanel('mamamia', data.mamamia || { likes: [], hates: [] });
+            // Update panels (data is already standardized)
+            updatePanel('ronji', data.ronji);
+            updatePanel('mamamia', data.mamamia);
             
             // Update avatars
             updateAvatars(data.avatars || { ronji: null, mamamia: null });
@@ -429,9 +450,6 @@
             hatesList.innerHTML = '';
             
             console.log(`👤 Updating ${person} panel:`, data);
-            console.log(`📊 ${person} data structure:`, data);
-            console.log(`❤️ ${person} likes array:`, data.likes);
-            console.log(`💔 ${person} hates array:`, data.hates);
             
             // Ensure we have arrays
             const likes = Array.isArray(data.likes) ? data.likes : [];
@@ -504,58 +522,29 @@
             }
             
             try {
-                // Get current data
                 const docRef = db.collection('preferences').doc('coupleData');
                 const doc = await docRef.get();
                 
                 if (doc.exists) {
                     const data = doc.data();
-                    console.log('📝 Current data before update:', data);
                     
-                    // Determine which key to use based on what exists
-                    let personKey;
-                    let personName;
+                    // Always use consistent keys: 'ronji' and 'mamamia'
+                    const personKey = person === 'ronji' ? 'ronji' : 'mamamia';
+                    const personName = person === 'ronji' ? 'Ronji' : 'Mamamia';
                     
-                    if (person === 'ronji') {
-                        // Check what key exists for Ronji
-                        if (data.ronji) {
-                            personKey = 'ronji';
-                            personName = 'Ronji';
-                        } else if (data.me) {
-                            personKey = 'me';
-                            personName = 'Ronji';
-                        } else {
-                            personKey = 'ronji';
-                            personName = 'Ronji';
-                        }
-                    } else if (person === 'mamamia') {
-                        // Check what key exists for Mamamia
-                        if (data.mamamia) {
-                            personKey = 'mamamia';
-                            personName = 'Mamamia';
-                        } else if (data.her) {
-                            personKey = 'her';
-                            personName = 'Mamamia';
-                        } else {
-                            personKey = 'mamamia';
-                            personName = 'Mamamia';
-                        }
-                    }
+                    console.log(`🔑 Using consistent key "${personKey}" for ${personName}`);
                     
-                    console.log(`🔑 Using key "${personKey}" for ${personName}`);
-                    
-                    // Create update object
-                    const updateData = {};
-                    
-                    // Get current items or initialize empty array
-                    let currentItems = [];
-                    if (data[personKey] && data[personKey][type] && Array.isArray(data[personKey][type])) {
-                        currentItems = data[personKey][type];
-                    }
+                    // Get current items from standardized structure
+                    const standardizedData = standardizeDataStructure(data);
+                    const currentItems = type === 'like' 
+                        ? standardizedData[personKey].likes 
+                        : standardizedData[personKey].hates;
                     
                     // Add new item to array
-                    updateData[`${personKey}.${type}`] = [...currentItems, text];
-                    updateData.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
+                    const updateData = {
+                        [`${personKey}.${type === 'like' ? 'likes' : 'hates'}`]: [...currentItems, text],
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    };
                     
                     console.log(`➕ Adding to ${personName}'s ${type}s:`, text);
                     console.log('📊 Update data:', updateData);
@@ -570,10 +559,8 @@
                     showSyncNotification(`Added to ${personName}'s ${type}s!`);
                     
                 } else {
-                    // Create document if it doesn't exist
                     console.log('📄 Creating new document...');
                     await createInitialData();
-                    // Try adding again
                     setTimeout(() => addItem(person, textId, typeId), 1000);
                 }
             } catch (error) {
@@ -592,21 +579,19 @@
                 if (doc.exists) {
                     const data = doc.data();
                     
-                    // Determine which key to use
-                    let personKey;
-                    if (person === 'ronji') {
-                        personKey = data.ronji ? 'ronji' : (data.me ? 'me' : 'ronji');
-                    } else {
-                        personKey = data.mamamia ? 'mamamia' : (data.her ? 'her' : 'mamamia');
-                    }
+                    // Always use consistent keys
+                    const personKey = person === 'ronji' ? 'ronji' : 'mamamia';
+                    const field = type === 'like' ? 'likes' : 'hates';
                     
-                    const items = data[personKey] ? data[personKey][type] : [];
+                    // Get current items from standardized structure
+                    const standardizedData = standardizeDataStructure(data);
+                    let items = standardizedData[personKey][field];
                     
                     if (items && items.length > index) {
                         items.splice(index, 1);
                         
                         await docRef.update({
-                            [`${personKey}.${type}`]: items,
+                            [`${personKey}.${field}`]: items,
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         
@@ -639,20 +624,12 @@
                 
                 reader.onload = async function(e) {
                     try {
-                        // Check what person key exists in database
+                        // Always use consistent keys
+                        const avatarKey = person === 'ronji' ? 'ronji' : 'mamamia';
+                        
                         const docRef = db.collection('preferences').doc('coupleData');
-                        const doc = await docRef.get();
-                        const data = doc.data();
                         
-                        // Determine correct key for avatar
-                        let avatarKey;
-                        if (person === 'ronji') {
-                            avatarKey = data.ronji ? 'ronji' : (data.me ? 'me' : 'ronji');
-                        } else {
-                            avatarKey = data.mamamia ? 'mamamia' : (data.her ? 'her' : 'mamamia');
-                        }
-                        
-                        // Update Firebase with correct key
+                        // Update Firebase with consistent key
                         await docRef.update({
                             [`avatars.${avatarKey}`]: e.target.result,
                             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
@@ -661,7 +638,7 @@
                         showSyncNotification('Photo updated!');
                         
                         // Update UI immediately
-                        if (avatarKey === 'ronji' || avatarKey === 'me') {
+                        if (avatarKey === 'ronji') {
                             document.getElementById('ronji-avatar-placeholder').style.display = 'none';
                             document.getElementById('ronji-avatar-img').style.display = 'block';
                             document.getElementById('ronji-avatar-img').src = e.target.result;
@@ -688,43 +665,59 @@
             
             if (avatars) {
                 // Update Ronji's avatar
-                if (avatars.ronji || avatars.me) {
-                    const imageData = avatars.ronji || avatars.me;
+                if (avatars.ronji) {
                     document.getElementById('ronji-avatar-placeholder').style.display = 'none';
                     const ronjiImg = document.getElementById('ronji-avatar-img');
                     ronjiImg.style.display = 'block';
-                    ronjiImg.src = imageData;
+                    ronjiImg.src = avatars.ronji;
                     console.log('✅ Updated Ronji avatar');
+                } else {
+                    document.getElementById('ronji-avatar-placeholder').style.display = 'block';
+                    document.getElementById('ronji-avatar-img').style.display = 'none';
                 }
                 
                 // Update Mamamia's avatar
-                if (avatars.mamamia || avatars.her) {
-                    const imageData = avatars.mamamia || avatars.her;
+                if (avatars.mamamia) {
                     document.getElementById('mamamia-avatar-placeholder').style.display = 'none';
                     const mamamiaImg = document.getElementById('mamamia-avatar-img');
                     mamamiaImg.style.display = 'block';
-                    mamamiaImg.src = imageData;
+                    mamamiaImg.src = avatars.mamamia;
                     console.log('✅ Updated Mamamia avatar');
+                } else {
+                    document.getElementById('mamamia-avatar-placeholder').style.display = 'block';
+                    document.getElementById('mamamia-avatar-img').style.display = 'none';
                 }
             }
         }
 
         function updateStats(data) {
-            const ronjiData = data.ronji || data.me || { likes: [], hates: [] };
-            const mamamiaData = data.mamamia || data.her || { likes: [], hates: [] };
-            
-            const ronjiLikes = Array.isArray(ronjiData.likes) ? ronjiData.likes : [];
-            const ronjiHates = Array.isArray(ronjiData.hates) ? ronjiData.hates : [];
-            const mamamiaLikes = Array.isArray(mamamiaData.likes) ? mamamiaData.likes : [];
-            const mamamiaHates = Array.isArray(mamamiaData.hates) ? mamamiaData.hates : [];
+            const ronjiLikes = Array.isArray(data.ronji.likes) ? data.ronji.likes : [];
+            const ronjiHates = Array.isArray(data.ronji.hates) ? data.ronji.hates : [];
+            const mamamiaLikes = Array.isArray(data.mamamia.likes) ? data.mamamia.likes : [];
+            const mamamiaHates = Array.isArray(data.mamamia.hates) ? data.mamamia.hates : [];
             
             const ronjiTotal = ronjiLikes.length + ronjiHates.length;
             const mamamiaTotal = mamamiaLikes.length + mamamiaHates.length;
             
+            // Calculate shared likes (items that appear in both)
+            const sharedLikes = ronjiLikes.filter(item => mamamiaLikes.includes(item));
+            
+            // Calculate opposite opinions (Ronji likes but Mamamia hates, or vice versa)
+            const oppositeRonjiLikeMamamiaHate = ronjiLikes.filter(item => mamamiaHates.includes(item));
+            const oppositeRonjiHateMamamiaLike = ronjiHates.filter(item => mamamiaLikes.includes(item));
+            const oppositeTotal = oppositeRonjiLikeMamamiaHate.length + oppositeRonjiHateMamamiaLike.length;
+            
             document.getElementById('ronji-total-count').textContent = ronjiTotal;
             document.getElementById('mamamia-total-count').textContent = mamamiaTotal;
+            document.getElementById('shared-likes-count').textContent = sharedLikes.length;
+            document.getElementById('opposite-count').textContent = oppositeTotal;
             
-            console.log('📊 Stats updated:', { ronjiTotal, mamamiaTotal });
+            console.log('📊 Stats updated:', { 
+                ronjiTotal, 
+                mamamiaTotal, 
+                sharedLikes: sharedLikes.length, 
+                oppositeTotal 
+            });
         }
 
         async function resetRonjiData() {
@@ -733,26 +726,57 @@
             try {
                 const docRef = db.collection('preferences').doc('coupleData');
                 
-                // Get current data first
-                const doc = await docRef.get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    
-                    // Determine Ronji key
-                    const ronjiKey = data.ronji ? 'ronji' : 'me';
-                    
-                    // Reset Ronji's data
-                    await docRef.update({
-                        [`${ronjiKey}.likes`]: ["Watching movies together", "Mamamia's smile in the morning"],
-                        [`${ronjiKey}.hates`]: ["Being away from Mamamia", "When she's upset"],
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    showSyncNotification('Ronji\'s data reset!');
-                }
+                // Reset Ronji's data using consistent key
+                await docRef.update({
+                    'ronji.likes': ["Watching movies together", "Mamamia's smile in the morning"],
+                    'ronji.hates': ["Being away from Mamamia", "When she's upset"],
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showSyncNotification('Ronji\'s data reset!');
             } catch (error) {
                 console.error('❌ Error resetting data:', error);
                 alert('Error resetting data: ' + error.message);
+            }
+        }
+
+        async function cleanDatabaseStructure() {
+            if (!confirm('Clean up database structure? This will remove duplicate keys and standardize everything to use consistent naming.')) return;
+            
+            try {
+                const docRef = db.collection('preferences').doc('coupleData');
+                const doc = await docRef.get();
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    const standardizedData = standardizeDataStructure(data);
+                    
+                    // Create clean data structure with only consistent keys
+                    const cleanData = {
+                        ronji: {
+                            likes: standardizedData.ronji.likes,
+                            hates: standardizedData.ronji.hates
+                        },
+                        mamamia: {
+                            likes: standardizedData.mamamia.likes,
+                            hates: standardizedData.mamamia.hates
+                        },
+                        avatars: standardizedData.avatars,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    // Keep the createdAt timestamp if it exists
+                    if (data.createdAt) {
+                        cleanData.createdAt = data.createdAt;
+                    }
+                    
+                    // Overwrite the document with clean structure
+                    await docRef.set(cleanData);
+                    showSyncNotification('Database cleaned up! Standardized to ronji/mamamia keys.');
+                }
+            } catch (error) {
+                console.error('❌ Error cleaning database:', error);
+                alert('Error cleaning database: ' + error.message);
             }
         }
 
@@ -813,19 +837,15 @@
                     // Check Ronji structure
                     if (data.ronji) {
                         console.log('📦 Ronji object:', data.ronji);
-                        console.log('Type of ronji:', typeof data.ronji);
-                        console.log('Ronji keys:', Object.keys(data.ronji));
                         console.log('Ronji.likes:', data.ronji.likes);
-                        console.log('Is ronji.likes array?', Array.isArray(data.ronji.likes));
+                        console.log('Ronji.hates:', data.ronji.hates);
                     }
                     
-                    // Check her (Mamamia) structure
-                    if (data.her) {
-                        console.log('📦 her (Mamamia) object:', data.her);
-                        console.log('Type of her:', typeof data.her);
-                        console.log('her keys:', Object.keys(data.her));
-                        console.log('her.likes:', data.her.likes);
-                        console.log('Is her.likes array?', Array.isArray(data.her.likes));
+                    // Check mamamia structure
+                    if (data.mamamia) {
+                        console.log('📦 Mamamia object:', data.mamamia);
+                        console.log('Mamamia.likes:', data.mamamia.likes);
+                        console.log('Mamamia.hates:', data.mamamia.hates);
                     }
                     
                     console.log('🔍 ===== END DEBUG =====');
