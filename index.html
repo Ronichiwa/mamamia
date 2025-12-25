@@ -65,10 +65,14 @@
         
         .likes-hates-container { padding: 20px; }
         .items-list { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; min-height: 50px; }
-        .item { background: var(--item-bg); padding: 10px 15px; border-radius: 25px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.9rem; flex: 1 1 auto; max-width: 100%; }
-        .item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 8px; }
-        .item button { background: transparent; color: var(--text-secondary); border: none; cursor: pointer; padding: 4px 8px; margin-left: 5px; flex-shrink: 0; }
-        .item button:hover { color: #ff4444; }
+        .item { background: var(--item-bg); padding: 10px 15px; border-radius: 25px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.9rem; flex: 1 1 auto; max-width: 100%; cursor: pointer; }
+        .item:hover { background: var(--border-color); }
+        .item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 8px; flex: 1; }
+        .item-buttons { display: flex; gap: 5px; }
+        .item button { background: transparent; color: var(--text-secondary); border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+        .item button:hover { background: rgba(0,0,0,0.1); }
+        .item button.edit-btn:hover { color: #4CAF50; }
+        .item button.delete-btn:hover { color: #ff4444; }
         
         .add-form { background: var(--item-bg); padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid var(--border-color); }
         .add-form h3 { color: var(--text-primary); margin-bottom: 12px; font-size: 1rem; }
@@ -113,11 +117,19 @@
         
         #loadingText { color: var(--text-secondary); margin-top: 10px; }
         
+        /* Edit mode styles */
+        .item.editing { background: rgba(76, 175, 80, 0.1); border-color: #4CAF50; }
+        .edit-input { flex: 1; padding: 8px 12px; border: 1px solid #4CAF50; border-radius: 4px; font-size: 0.9rem; background: var(--card-bg); color: var(--text-primary); margin-right: 8px; }
+        .edit-buttons { display: flex; gap: 5px; }
+        .save-btn { background: #4CAF50 !important; color: white !important; padding: 6px 12px !important; }
+        .cancel-btn { background: #f44336 !important; color: white !important; padding: 6px 12px !important; }
+        
         /* Touch-friendly improvements */
         @media (hover: none) {
             button:active:not(.upload-btn):not(.item button) { background: #3a559f; transform: scale(0.98); }
             .item button:active { color: #ff4444; transform: scale(0.95); }
             .upload-btn:active { background: rgba(0,0,0,0.9); transform: scale(0.95); }
+            .item:active { background: var(--border-color); }
         }
         
         /* Better mobile input experience */
@@ -245,7 +257,7 @@
             </div>
             
             <div class="stats-section">
-                <h2>Our Likes and Hates Stats</h2>
+                <h2>Our Relationship Stats</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-label">Ronji's Total Items</div>
@@ -270,7 +282,7 @@
             </div>
             
             <footer>
-                <p>Made with <i class="fas fa-heart" style="color:#ff6b8b;"></i> for Mamamia | The best girl!</p>
+                <p>Made with <i class="fas fa-heart" style="color:#ff6b8b;"></i> for Mamamia | Updates sync instantly!</p>
             </footer>
         </div>
     </div>
@@ -354,7 +366,6 @@
                 .onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
-                        console.log('🔥 FIREBASE DATA RECEIVED:', data);
                         
                         // Clean and standardize the data structure
                         const standardizedData = standardizeDataStructure(data);
@@ -451,8 +462,6 @@
         }
 
         function updateUI(data) {
-            console.log('🎨 Updating UI with standardized data:', data);
-            
             // Update panels (data is already standardized)
             updatePanel('ronji', data.ronji);
             updatePanel('mamamia', data.mamamia);
@@ -483,17 +492,9 @@
                 emptyMsg.textContent = 'No likes added yet';
                 likesList.appendChild(emptyMsg);
             } else {
-                // Add likes
+                // Add likes with click-to-edit functionality
                 likes.forEach((item, index) => {
-                    const itemEl = document.createElement('div');
-                    itemEl.className = 'item';
-                    itemEl.innerHTML = `
-                        <span><i class="fas fa-heart" style="color:#4CAF50;"></i> ${item}</span>
-                        <button onclick="deleteItem('${person}', 'like', ${index})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    `;
-                    likesList.appendChild(itemEl);
+                    createItemElement(person, 'like', item, index, likesList);
                 });
             }
             
@@ -504,19 +505,137 @@
                 emptyMsg.textContent = 'No hates added yet';
                 hatesList.appendChild(emptyMsg);
             } else {
-                // Add hates
+                // Add hates with click-to-edit functionality
                 hates.forEach((item, index) => {
-                    const itemEl = document.createElement('div');
-                    itemEl.className = 'item';
-                    itemEl.innerHTML = `
-                        <span><i class="fas fa-times-circle" style="color:#F44336;"></i> ${item}</span>
-                        <button onclick="deleteItem('${person}', 'hate', ${index})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    `;
-                    hatesList.appendChild(itemEl);
+                    createItemElement(person, 'hate', item, index, hatesList);
                 });
             }
+        }
+
+        function createItemElement(person, type, text, index, container) {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'item';
+            itemEl.dataset.person = person;
+            itemEl.dataset.type = type;
+            itemEl.dataset.index = index;
+            
+            const iconColor = type === 'like' ? '#4CAF50' : '#F44336';
+            const iconClass = type === 'like' ? 'fa-heart' : 'fa-times-circle';
+            
+            itemEl.innerHTML = `
+                <span><i class="fas ${iconClass}" style="color:${iconColor};"></i> ${text}</span>
+                <div class="item-buttons">
+                    <button class="edit-btn" onclick="event.stopPropagation(); editItem('${person}', '${type}', ${index})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteItem('${person}', '${type}', ${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Add click event to edit on item click
+            itemEl.addEventListener('click', function(e) {
+                if (!e.target.closest('button')) {
+                    editItem(person, type, index);
+                }
+            });
+            
+            container.appendChild(itemEl);
+        }
+
+        function editItem(person, type, index) {
+            // Find the item element
+            const itemsList = document.getElementById(`${person}-${type === 'like' ? 'likes' : 'hates'}-list`);
+            const itemEl = itemsList.children[index];
+            
+            // Get current text
+            const span = itemEl.querySelector('span');
+            const currentText = span.textContent.trim();
+            const iconHtml = span.innerHTML.match(/<i[^>]*><\/i>/)[0]; // Get the icon HTML
+            
+            // Replace with edit mode
+            itemEl.className = 'item editing';
+            itemEl.innerHTML = `
+                <input type="text" class="edit-input" value="${currentText.replace(/^[^a-zA-Z]+/, '')}" placeholder="Edit item...">
+                <div class="edit-buttons">
+                    <button class="save-btn" onclick="saveEdit('${person}', '${type}', ${index})">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="cancel-btn" onclick="cancelEdit('${person}', '${type}', ${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Focus the input
+            const input = itemEl.querySelector('.edit-input');
+            input.focus();
+            input.select();
+            
+            // Add Enter key support
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    saveEdit(person, type, index);
+                }
+            });
+        }
+
+        async function saveEdit(person, type, index) {
+            const itemsList = document.getElementById(`${person}-${type === 'like' ? 'likes' : 'hates'}-list`);
+            const itemEl = itemsList.children[index];
+            const input = itemEl.querySelector('.edit-input');
+            const newText = input.value.trim();
+            
+            if (!newText) {
+                alert('Item cannot be empty!');
+                input.focus();
+                return;
+            }
+            
+            try {
+                const docRef = db.collection('preferences').doc('coupleData');
+                const doc = await docRef.get();
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    
+                    // Always use consistent keys
+                    const personKey = person === 'ronji' ? 'ronji' : 'mamamia';
+                    const field = type === 'like' ? 'likes' : 'hates';
+                    
+                    // Get current items from standardized structure
+                    const standardizedData = standardizeDataStructure(data);
+                    let items = [...standardizedData[personKey][field]];
+                    
+                    if (items && items.length > index) {
+                        // Update the item
+                        items[index] = newText;
+                        
+                        await docRef.update({
+                            [`${personKey}.${field}`]: items,
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        showSyncNotification('Item updated!');
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error updating item:', error);
+                alert('Error updating item: ' + error.message);
+            }
+        }
+
+        function cancelEdit(person, type, index) {
+            // Just refresh from Firebase - simpler than trying to revert locally
+            const docRef = db.collection('preferences').doc('coupleData');
+            docRef.get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    const standardizedData = standardizeDataStructure(data);
+                    updateUI(standardizedData);
+                }
+            });
         }
 
         async function addRonjiItem() {
@@ -597,7 +716,7 @@
                     
                     // Get current items from standardized structure
                     const standardizedData = standardizeDataStructure(data);
-                    let items = standardizedData[personKey][field];
+                    let items = [...standardizedData[personKey][field]];
                     
                     if (items && items.length > index) {
                         items.splice(index, 1);
@@ -766,5 +885,3 @@
     </script>
 </body>
 </html>
-
-
