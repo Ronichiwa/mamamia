@@ -53,11 +53,13 @@
         .add-plan-btn:hover { background: #388E3C; }
         
         .plans-list { display: grid; gap: 15px; margin-bottom: 20px; }
-        .plan-item { background: var(--item-bg); padding: 15px; border-radius: 8px; border-left: 4px solid #4b6cb7; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); }
+        .plan-item { background: var(--item-bg); padding: 15px; border-radius: 8px; border-left: 4px solid #4b6cb7; display: flex; justify-content: space-between; align-items: flex-start; border: 1px solid var(--border-color); }
+        .plan-info { flex: 1; }
         .plan-info h3 { color: var(--text-primary); margin-bottom: 5px; font-size: 1.1rem; }
         .plan-info p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 5px; }
-        .plan-date { background: rgba(75, 108, 183, 0.1); color: #4b6cb7; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
-        .plan-buttons { display: flex; gap: 8px; }
+        .plan-date { background: rgba(75, 108, 183, 0.1); color: #4b6cb7; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; display: inline-block; margin-right: 8px; margin-bottom: 5px; }
+        .plan-status { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+        .plan-buttons { display: flex; gap: 8px; flex-shrink: 0; }
         .plan-btn { background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 5px 10px; border-radius: 4px; }
         .plan-btn:hover { background: var(--border-color); }
         .plan-btn.edit:hover { color: #4CAF50; }
@@ -690,7 +692,7 @@
             
             // Load plans if in plans view
             if (currentView === 'plans') {
-                loadPlans();
+                displayPlans(data.plans || []);
             }
         }
 
@@ -775,7 +777,9 @@
             document.getElementById('planStatus').value = 'upcoming';
             
             // Set min date to today
-            document.getElementById('planDate').min = new Date().toISOString().split('T')[0];
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('planDate').min = today;
+            document.getElementById('planDate').value = today;
             
             // Scroll to form
             document.getElementById('addPlanForm').scrollIntoView({ behavior: 'smooth' });
@@ -807,32 +811,35 @@
                 
                 if (doc.exists) {
                     const data = doc.data();
-                    const plans = data.plans || [];
+                    let plans = data.plans || [];
+                    
+                    // Create plan object with regular date strings (not FieldValue)
+                    const planData = {
+                        title,
+                        date,
+                        description,
+                        status,
+                        updatedAt: new Date().toISOString() // Use regular Date string
+                    };
                     
                     if (editingPlanId !== null) {
                         // Update existing plan
                         plans[editingPlanId] = {
-                            title,
-                            date,
-                            description,
-                            status,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            ...plans[editingPlanId], // Keep existing createdAt
+                            ...planData
                         };
                     } else {
                         // Add new plan
                         plans.push({
-                            title,
-                            date,
-                            description,
-                            status,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            ...planData,
+                            createdAt: new Date().toISOString() // Use regular Date string
                         });
                     }
                     
+                    // Update the document with plans array
                     await docRef.update({
                         plans: plans,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp() // This is OK at document level
                     });
                     
                     hideAddPlanForm();
@@ -850,6 +857,8 @@
         }
 
         function loadPlans() {
+            // Plans are loaded through the real-time listener in updateUI
+            // This function is kept for backward compatibility
             const docRef = db.collection('preferences').doc('coupleData');
             docRef.get().then(doc => {
                 if (doc.exists) {
@@ -874,11 +883,11 @@
             }
             
             // Sort plans by date (upcoming first)
-            plans.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const sortedPlans = [...plans].sort((a, b) => new Date(a.date) - new Date(b.date));
             
             let html = '';
             
-            plans.forEach((plan, index) => {
+            sortedPlans.forEach((plan, index) => {
                 const dateObj = new Date(plan.date);
                 const formattedDate = dateObj.toLocaleDateString('en-US', {
                     weekday: 'long',
@@ -901,17 +910,20 @@
                     'cancelled': 'Cancelled'
                 };
                 
+                const statusColor = statusColors[plan.status] || '#4b6cb7';
+                const statusLabel = statusLabels[plan.status] || plan.status;
+                
                 html += `
-                    <div class="plan-item" style="border-left-color: ${statusColors[plan.status] || '#4b6cb7'}">
+                    <div class="plan-item" style="border-left-color: ${statusColor}">
                         <div class="plan-info">
                             <h3>${plan.title}</h3>
                             <p>${plan.description}</p>
-                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                            <div style="margin-top: 10px;">
                                 <span class="plan-date">
                                     <i class="fas fa-calendar"></i> ${formattedDate}
                                 </span>
-                                <span style="background: ${statusColors[plan.status] || '#4b6cb7'}; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem;">
-                                    ${statusLabels[plan.status] || plan.status}
+                                <span class="plan-status" style="background: ${statusColor}; color: white;">
+                                    ${statusLabel}
                                 </span>
                             </div>
                         </div>
@@ -943,8 +955,8 @@
                         document.getElementById('addPlanForm').style.display = 'block';
                         document.getElementById('planTitle').value = plan.title;
                         document.getElementById('planDate').value = plan.date;
-                        document.getElementById('planDescription').value = plan.description;
-                        document.getElementById('planStatus').value = plan.status;
+                        document.getElementById('planDescription').value = plan.description || '';
+                        document.getElementById('planStatus').value = plan.status || 'upcoming';
                         
                         // Scroll to form
                         document.getElementById('addPlanForm').scrollIntoView({ behavior: 'smooth' });
